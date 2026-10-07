@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Global Forex Trade</title>
+<style>
+:root{--bg:#f5f7fa;--card:#fff;--tx:#0f1b2d;--mu:#6b7788;--bd:#e3e8ef;--ac:#0b6bff;--up:#0a9d5c;--dn:#d93a3a;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0b111b;--card:#141c2a;--tx:#e8eef7;--mu:#8795a9;--bd:#24304a;--ac:#4d8dff;--up:#2ecc8a;--dn:#ff6b6b}}
+:root[data-theme="dark"]{--bg:#0b111b;--card:#141c2a;--tx:#e8eef7;--mu:#8795a9;--bd:#24304a;--ac:#4d8dff;--up:#2ecc8a;--dn:#ff6b6b}
+*{box-sizing:border-box}html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--tx);font:15px/1.4 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;padding-bottom:70px}
+header{position:sticky;top:env(safe-area-inset-top,0px);background:var(--bg);padding:12px 16px;display:flex;justify-content:space-between;align-items:center;z-index:5;border-bottom:1px solid var(--bd)}
+h1{font-size:17px;margin:0}h2{font-size:16px;margin:16px 0 8px}
+main{max-width:720px;margin:0 auto;padding:12px 16px}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:12px;margin-bottom:10px}
+.row{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.mu{color:var(--mu);font-size:13px}.up{color:var(--up)}.dn{color:var(--dn)}
+.seg{display:flex;gap:6px;margin-bottom:10px}
+.seg button,.btn{border:1px solid var(--bd);background:var(--card);color:var(--tx);padding:9px 12px;border-radius:10px;font:inherit;cursor:pointer}
+.seg button{flex:1}.seg .on,.btn.p{background:var(--ac);color:#fff;border-color:var(--ac)}
+.btn.b{background:var(--up);color:#fff;border-color:var(--up)}.btn.s{background:var(--dn);color:#fff;border-color:var(--dn)}
+input,select{width:100%;padding:10px;border-radius:10px;border:1px solid var(--bd);background:var(--bg);color:var(--tx);font:inherit;margin:4px 0 8px}
+nav{position:fixed;bottom:0;left:0;right:0;background:var(--card);border-top:1px solid var(--bd);display:flex;overflow-x:auto;padding-bottom:env(safe-area-inset-bottom,0px)}
+nav button{flex:1;min-width:62px;background:none;border:0;color:var(--mu);padding:8px 2px;font:11px system-ui;cursor:pointer}
+nav button span{display:block;font-size:19px}nav .on{color:var(--ac)}
+canvas{width:100%;height:200px;display:block}
+.big{font-size:26px;font-weight:700}
+.tag{font-size:11px;padding:2px 8px;border-radius:99px;background:var(--bd)}
+#toast{position:fixed;top:60px;left:50%;transform:translateX(-50%);background:var(--ac);color:#fff;padding:10px 16px;border-radius:10px;display:none;z-index:9;max-width:90%}
+.warn{font-size:12px;color:var(--mu);text-align:center;margin:14px 0}
+</style></head><body>
+<header><h1>🌐 Global Forex Trade</h1><span class="tag">DEMO · simulated</span></header>
+<main id="m"></main><div id="toast"></div>
+<nav id="nav"></nav>
+<script>
+const A={forex:[["EUR/USD",1.085],["GBP/USD",1.27],["USD/JPY",150.2],["AUD/USD",.66],["USD/CHF",.88]],
+crypto:[["BTC",65000],["ETH",3200],["SOL",150],["XRP",.55]],
+stocks:[["AAPL",225],["MSFT",420],["TSLA",250],["NVDA",120],["AMZN",185]]};
+const P={},H={},C={};
+for(const c in A)A[c].forEach(([s,p])=>{P[s]=p;C[s]=c;H[s]=Array.from({length:90},()=>p*(1+(Math.random()-.5)*.004))});
+const D={cash:10000,pos:{},alerts:[],tx:[],kyc:{st:"none"},sec:{tfa:false,bio:false,alert:true},halt:false,trades:0,vol:0};
+let S=D;try{S=Object.assign({},D,JSON.parse(localStorage.getItem("gft")||"{}"))}catch(e){}
+const save=()=>{try{localStorage.setItem("gft",JSON.stringify(S))}catch(e){}};
+let view="mk",cat="forex",sym="EUR/USD",admin=false;
+const $=s=>document.querySelector(s);
+const dec=s=>C[s]=="forex"?(s.includes("JPY")?3:4):(P[s]>100?2:C[s]=="crypto"?4:2);
+const f=(s,p)=>p.toFixed(dec(s)),usd=n=>"$"+n.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});
+const chg=s=>(P[s]/H[s][0]-1)*100;
+function toast(t){const e=$("#toast");e.textContent=t;e.style.display="block";clearTimeout(toast.t);toast.t=setTimeout(()=>e.style.display="none",3500)}
+const NAV=[["mk","🌍","Markets"],["ch","📊","Charts"],["pf","💼","Portfolio"],["wl","💰","Wallet"],["al","🔔","Alerts"],["ac","👤","Account"],["ad","⚙️","Admin"]];
+function nav(){$("#nav").innerHTML=NAV.map(n=>`<button class="${view==n[0]?"on":""}" onclick="go('${n[0]}')"><span>${n[1]}</span>${n[2]}</button>`).join("")}
+function go(v){view=v;nav();render();scrollTo(0,0)}
+function equity(){let e=S.cash;for(const s in S.pos)e+=S.pos[s].q*P[s];return e}
+const row=s=>`<div class="card row" onclick="sym='${s}';go('ch')"><div><b>${s}</b><div class="mu">${C[s]}</div></div><div style="text-align:right"><b data-p="${s}">${f(s,P[s])}</b><div data-c="${s}" class="${chg(s)>=0?"up":"dn"}">${chg(s).toFixed(2)}%</div></div></div>`;
+const V={
+mk:()=>`<div class="seg">${[["forex","🌍 Forex"],["crypto","₿ Crypto"],["stocks","📈 Stocks"]].map(c=>`<button class="${cat==c[0]?"on":""}" onclick="cat='${c[0]}';render()">${c[1]}</button>`).join("")}</div>${A[cat].map(a=>row(a[0])).join("")}`,
+ch:()=>`<select onchange="sym=this.value;render()">${Object.keys(P).map(s=>`<option ${s==sym?"selected":""}>${s}</option>`).join("")}</select>
+<div class="card"><div class="row"><b>${sym}</b><b class="big" data-p="${sym}">${f(sym,P[sym])}</b></div><canvas id="cv"></canvas></div>
+<div class="card"><b>Trade ${sym}</b>${S.halt?`<p class="dn">Trading is paused by admin.</p>`:""}<label class="mu">Quantity (${C[sym]=="forex"?"units":C[sym]=="crypto"?"coins":"shares"})</label><input id="q" type="number" min="0" value="${C[sym]=="forex"?1000:C[sym]=="crypto"?.1:1}" step="any">
+<div class="row"><button class="btn b" style="flex:1" onclick="trade('buy')">Buy</button><button class="btn s" style="flex:1" onclick="trade('sell')">Sell</button></div>
+<p class="mu">Cash: ${usd(S.cash)} · Position: ${(S.pos[sym]?.q||0)}</p></div>
+<div class="card"><b>Price alert</b><div class="row"><select id="at" style="width:40%"><option value="above">Above</option><option value="below">Below</option></select><input id="ap" type="number" step="any" placeholder="${f(sym,P[sym])}"></div><button class="btn p" onclick="addAlert(sym)">Set alert</button></div>`,
+pf:()=>{const e=equity(),ps=Object.keys(S.pos);return`<div class="card"><div class="mu">Total equity</div><div class="big">${usd(e)}</div><div class="${e>=10000?"up":"dn"}">${(e-10000>=0?"+":"")+usd(e-10000)} vs start</div></div><h2>Positions</h2>${ps.length?ps.map(s=>{const p=S.pos[s],pl=(P[s]-p.a)*p.q;return`<div class="card row" onclick="sym='${s}';go('ch')"><div><b>${s}</b><div class="mu">${p.q} @ ${f(s,p.a)}</div></div><div style="text-align:right"><b>${usd(p.q*P[s])}</b><div class="${pl>=0?"up":"dn"}">${pl>=0?"+":""}${usd(pl)}</div></div></div>`}).join(""):`<p class="mu">No open positions. Head to Markets to place a trade.</p>`}`},
+wl:()=>`<div class="card"><div class="mu">Available balance (USD)</div><div class="big">${usd(S.cash)}</div><input id="amt" type="number" placeholder="Amount" min="0"><div class="row"><button class="btn b" style="flex:1" onclick="wal(1)">Deposit</button><button class="btn s" style="flex:1" onclick="wal(-1)">Withdraw</button></div><p class="mu">Demo wallet: no real money moves.</p></div><h2>History</h2>${S.tx.slice(0,15).map(t=>`<div class="card row"><span>${t.n}<div class="mu">${t.d}</div></span><b class="${t.a>=0?"up":"dn"}">${t.a>=0?"+":""}${usd(t.a)}</b></div>`).join("")||`<p class="mu">No transactions yet.</p>`}`,
+al:()=>`<h2>Active alerts</h2>${S.alerts.map((a,i)=>`<div class="card row"><span><b>${a.s}</b> ${a.t} ${f(a.s,a.p)}</span><button class="btn" onclick="S.alerts.splice(${i},1);save();render()">✕</button></div>`).join("")||`<p class="mu">None yet. Open a chart to create one.</p>`}`,
+ac:()=>{const k=S.kyc;return`<div class="card"><div class="row"><b>👤 Identity verification (KYC)</b><span class="tag">${k.st}</span></div>${k.st=="none"?`<input id="kn" placeholder="Full legal name"><input id="kc" placeholder="Country"><select id="kd"><option>Passport</option><option>National ID</option><option>Driver's license</option></select><button class="btn p" onclick="kyc()">Submit for review</button>`:`<p class="mu">${k.n} · ${k.c} · ${k.d}</p>`}</div>
+<div class="card"><b>🛡️ Security</b>${[["tfa","Two-factor authentication"],["bio","Biometric lock"],["alert","Login alerts"]].map(x=>`<div class="row" style="margin-top:10px"><span>${x[1]}</span><button class="btn ${S.sec[x[0]]?"p":""}" onclick="S.sec['${x[0]}']=!S.sec['${x[0]}'];save();render()">${S.sec[x[0]]?"On":"Off"}</button></div>`).join("")}<p class="mu">Never share codes. We never ask for your password.</p></div>
+<button class="btn" onclick="S=JSON.parse(JSON.stringify(D));save();render();toast('Demo account reset')">Reset demo account</button>`},
+ad:()=>!admin?`<div class="card"><b>⚙️ Admin dashboard</b><p class="mu">Enter PIN (demo PIN: 0000)</p><input id="pin" type="password" inputmode="numeric"><button class="btn p" onclick="if($('#pin').value=='0000'){admin=true;render()}else toast('Wrong PIN')">Unlock</button></div>`:
+`<div class="card"><div class="row"><span>Trades executed</span><b>${S.trades}</b></div><div class="row"><span>Volume</span><b>${usd(S.vol)}</b></div><div class="row"><span>Equity</span><b>${usd(equity())}</b></div><div class="row"><span>Open alerts</span><b>${S.alerts.length}</b></div><div class="row"><span>KYC status</span><b>${S.kyc.st}</b></div></div>
+<div class="card"><button class="btn ${S.halt?"b":"s"}" onclick="S.halt=!S.halt;save();render()">${S.halt?"Resume trading":"Pause all trading"}</button> ${S.kyc.st=="pending"?`<button class="btn p" onclick="S.kyc.st='verified';save();render()">Approve KYC</button>`:""}</div><button class="btn" onclick="admin=false;render()">Lock</button>`};
+function render(){$("#m").innerHTML=V[view]()+`<p class="warn">Simulated prices and virtual funds for demonstration. Not financial advice. Trading involves risk.</p>`;if(view=="ch")draw()}
+function trade(side){if(S.halt)return toast("Trading paused");const q=parseFloat($("#q").value);if(!(q>0))return toast("Enter a quantity");const p=P[sym],v=q*p,o=S.pos[sym];
+if(side=="buy"){if(v>S.cash)return toast("Insufficient funds");S.cash-=v;const n=(o?.q||0)+q;S.pos[sym]={q:n,a:((o?o.q*o.a:0)+v)/n}}
+else{if(!o||o.q<q)return toast("Not enough position");S.cash+=v;o.q-=q;if(o.q<1e-9)delete S.pos[sym]}
+S.trades++;S.vol+=v;S.tx.unshift({n:`${side.toUpperCase()} ${q} ${sym}`,d:new Date().toLocaleString(),a:side=="buy"?-v:v});save();toast(`${side=="buy"?"Bought":"Sold"} ${q} ${sym} @ ${f(sym,p)}`);render()}
+function wal(d){const a=parseFloat($("#amt").value);if(!(a>0))return toast("Enter amount");if(d<0&&a>S.cash)return toast("Insufficient funds");S.cash+=d*a;S.tx.unshift({n:d>0?"Deposit":"Withdrawal",d:new Date().toLocaleString(),a:d*a});save();render()}
+function addAlert(s){const p=parseFloat($("#ap").value);if(!(p>0))return toast("Enter a price");S.alerts.push({s,p,t:$("#at").value});save();toast("Alert set");go("al")}
+function kyc(){const n=$("#kn").value.trim(),c=$("#kc").value.trim();if(!n||!c)return toast("Fill all fields");S.kyc={st:"pending",n,c,d:$("#kd").value};save();render();setTimeout(()=>{if(S.kyc.st=="pending"){S.kyc.st="verified";save();toast("KYC verified ✅");if(view=="ac")render()}},4000)}
+function draw(){const cv=$("#cv");if(!cv)return;const w=cv.width=cv.clientWidth*2,h=cv.height=400,x=cv.getContext("2d"),d=H[sym],mn=Math.min(...d),mx=Math.max(...d),up=d[d.length-1]>=d[0];
+x.clearRect(0,0,w,h);x.strokeStyle=getComputedStyle(document.documentElement).getPropertyValue(up?"--up":"--dn");x.lineWidth=3;x.beginPath();
+d.forEach((v,i)=>{const X=i/(d.length-1)*w,Y=h-10-(v-mn)/((mx-mn)||1)*(h-20);i?x.lineTo(X,Y):x.moveTo(X,Y)});x.stroke()}
+setInterval(()=>{for(const s in P){P[s]*=1+(Math.random()-.5)*(C[s]=="crypto"?.004:C[s]=="stocks"?.002:.0007);H[s].push(P[s]);H[s].shift()}
+document.querySelectorAll("[data-p]").forEach(e=>e.textContent=f(e.dataset.p,P[e.dataset.p]));
+document.querySelectorAll("[data-c]").forEach(e=>{const c=chg(e.dataset.c);e.textContent=c.toFixed(2)+"%";e.className=c>=0?"up":"dn"});
+if(view=="ch")draw();if(view=="pf")render();
+S.alerts=S.alerts.filter(a=>{const hit=a.t=="above"?P[a.s]>=a.p:P[a.s]<=a.p;if(hit)toast(`🔔 ${a.s} is ${a.t} ${f(a.s,a.p)}`);return!hit});
+},1000);
+nav();render();
+</script></body></html>
